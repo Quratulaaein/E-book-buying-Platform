@@ -1,0 +1,153 @@
+import { Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { v2 as cloudinary } from 'cloudinary';
+
+const prisma = new PrismaClient();
+
+export const uploadBook = async (req: Request, res: Response) => {
+  try {
+    const { 
+      title, 
+      description, 
+      price, 
+      publisher, 
+      tags, 
+      authors 
+    } = req.body;
+
+    // Upload thumbnail to Cloudinary
+    const thumbnailResult = await cloudinary.uploader.upload(req.files.thumbnail[0].path, {
+      folder: 'book-thumbnails'
+    });
+
+    // Upload PDF to Cloudinary
+    const pdfResult = await cloudinary.uploader.upload(req.files.pdf[0].path, {
+      folder: 'book-pdfs',
+      resource_type: 'raw'
+    });
+
+    // Create book in database
+    const book = await prisma.book.create({
+      data: {
+        title,
+        description,
+        price: parseFloat(price),
+        publisher,
+        tags,
+        authors,
+        thumbnailUrl: thumbnailResult.secure_url,
+        pdfUrl: pdfResult.secure_url,
+        rating: 0,
+        totalRatings: 0
+      }
+    });
+
+    res.status(201).json(book);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error uploading book' });
+  }
+};
+
+export const searchBooks = async (req: Request, res: Response) => {
+  try {
+    const { 
+      query, 
+      tags, 
+      minPrice, 
+      maxPrice, 
+      sortBy = 'uploadDate', 
+      sortOrder = 'desc' 
+    } = req.query;
+
+    const where: any = {};
+
+    // Text search
+    if (query) {
+      where.OR = [
+        { title: { contains: query as string, mode: 'insensitive' } },
+        { description: { contains: query as string, mode: 'insensitive' } },
+        { tags: { contains: query as string, mode: 'insensitive' } },
+        { authors: { contains: query as string, mode: 'insensitive' } },
+        { publisher: { contains: query as string, mode: 'insensitive' } }
+      ];
+    }
+
+    // Tag filtering
+    if (tags) {
+      const tagArray = (tags as string).split(',');
+      where.AND = tagArray.map(tag => ({
+        tags: { contains: tag.trim() }
+      }));
+    }
+
+    // Price filtering
+    if (minPrice) {
+      where.price = { gte: parseFloat(minPrice as string) };
+    }
+    if (maxPrice) {
+      where.price = { 
+        ...where.price, 
+        lte: parseFloat(maxPrice as string) 
+      };
+    }
+
+    // Sorting
+    const orderBy: any = {};
+    orderBy[sortBy as string] = sortOrder;
+
+    const books = await prisma.book.findMany({
+      where,
+      orderBy,
+      select: {
+        id: true,
+        title: true,
+        price: true,
+        thumbnailUrl: true,
+        rating: true,
+        authors: true,
+        uploadDate: true
+      }
+    });
+
+    res.json(books);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error searching books' });
+  }
+};
+
+export const getBookDetails = async (req: Request, res: Response) => {
+  try {
+    const { bookId } = req.params;
+    const userId = req.user?.id;
+
+    const book = await prisma.book.findUnique({
+      where: { id: bookId },
+      include: {
+        ratings: true
+      }
+    });
+
+    if (!book) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    // Check if user has purchased the book
+    const hasPurchased = await prisma.purchase.findFirst({
+      where: {
+        userId,
+        bookId
+      }
+    });
+
+    res.json({
+      ...book,
+      canRate: !!hasPurchased,
+      canRead: !!hasPurchased
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error fetching book details' });
+  }
+};
