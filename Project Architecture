@@ -1,0 +1,71 @@
+e-book-marketplace/
+│
+├── client/                 # React frontend
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── common/
+│   │   │   ├── layout/
+│   │   │   ├── books/
+│   │   │   └── admin/
+│   │   ├── pages/
+│   │   │   ├── Home.tsx
+│   │   │   ├── BookDetails.tsx
+│   │   │   ├── Cart.tsx
+│   │   │   ├── Checkout.tsx
+│   │   │   ├── MyBooks.tsx
+│   │   │   ├── Auth/
+│   │   │   │   ├── Login.tsx
+│   │   │   │   └── Signup.tsx
+│   │   │   └── Admin/
+│   │   │       ├── Dashboard.tsx
+│   │   │       ├── BookManagement.tsx
+│   │   │       └── TransactionHistory.tsx
+│   │   ├── redux/
+│   │   │   ├── store.ts
+│   │   │   ├── authSlice.ts
+│   │   │   ├── cartSlice.ts
+│   │   │   └── bookSlice.ts
+│   │   ├── hooks/
+│   │   │   └── useAuth.ts
+│   │   ├── utils/
+│   │   │   ├── api.ts
+│   │   │   └── stripeUtils.ts
+│   │   └── App.tsx
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── server/                 # Express backend
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/
+│   ├── src/
+│   │   ├── controllers/
+│   │   │   ├── authController.ts
+│   │   │   ├── bookController.ts
+│   │   │   ├── cartController.ts
+│   │   │   ├── stripeController.ts
+│   │   │   └── adminController.ts
+│   │   ├── middleware/
+│   │   │   ├── authMiddleware.ts
+│   │   │   └── adminMiddleware.ts
+│   │   ├── routes/
+│   │   │   ├── authRoutes.ts
+│   │   │   ├── bookRoutes.ts
+│   │   │   ├── cartRoutes.ts
+│   │   │   ├── stripeRoutes.ts
+│   │   │   └── adminRoutes.ts
+│   │   ├── services/
+│   │   │   ├── emailService.ts
+│   │   │   └── stripeService.ts
+│   │   ├── utils/
+│   │   │   ├── validation.ts
+│   │   │   └── errorHandler.ts
+│   │   ├── config/
+│   │   │   ├── database.ts
+│   │   │   └── stripe.ts
+│   │   └── app.ts
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── .gitignore
+└── README.md
